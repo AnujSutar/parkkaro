@@ -1,0 +1,5 @@
+# Apache (XAMPP) rules: never serve notes, secrets, dumps or logs; no directory listings.
+Options -Indexes
+<FilesMatch "\.(txt|md|env|key|sql|log|ini|lock|json|example)$">
+    Require all denied
+</FilesMatch>

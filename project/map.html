@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaflet Map with GPS Location</title>
+  <!-- Include Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    /* Set the size of the map */
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    /* Ensure the page fills the screen */
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Leaflet Map with GPS Location</h1>
+  <div id="map"></div>
+
+  <!-- Include Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    // Initialize the map
+    const map = L.map('map').setView([40.730610, -73.935242], 12); // Coordinates of New York City, zoom level 12
+
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Create a marker for the user's live location
+    const userMarker = L.marker([0, 0]).addTo(map).bindPopup('Your location').openPopup();
+
+    // Function to update the user's location
+    function updateLocation(position) {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      // Move the map to the user's current location
+      map.setView([lat, lon], 13);
+
+      // Update the userMarker position
+      userMarker.setLatLng([lat, lon]);
+      
+      // Optional: Show a message with the user's coordinates
+      userMarker.setPopupContent('Your location: ' + lat.toFixed(4) + ', ' + lon.toFixed(4));
+    }
+
+    // Function to handle geolocation error
+    function handleLocationError(error) {
+      alert("Error getting location: " + error.message);
+    }
+
+    // Request the user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(updateLocation, handleLocationError, {
+        enableHighAccuracy: true, // Use high accuracy (can drain battery faster)
+        timeout: 10000,           // Timeout after 10 seconds
+        maximumAge: 0             // Don't use cached position
+      });
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
+
+    // Add a click event listener to place new markers
+    map.on('click', function(e) {
+      placeMarker(e.latlng);
+    });
+
+    // Function to place a marker at a given location
+    function placeMarker(latlng) {
+      L.marker(latlng).addTo(map)
+        .bindPopup('<b>Marker at: ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '</b>')
+        .openPopup();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<html>
+<head>
+    <style>
+        div.b128 {
+            border-left: 1px black solid;
+            height: 30px;
+        }
+
+        p.inline {
+            display: inline-block;
+        }
+
+        span {
+            font-size: 13px;
+        }
+
+        @media print {
+            @page {
+                size: auto;
+                margin: 0mm;
+            }
+        }
+    </style>
+</head>
+<body onload="window.print();">
+    <div style="margin-left: 5%">
+        <?php
+        include 'barcode128.php';
+
+        $product = $_POST['product'];
+        $rate = $_POST['rate'];
+        $product_id = stripslashes($_POST['product_id']);
+        $print_qty = $_POST['print_qty'];
+
+        for ($i = 1; $i <= $print_qty; $i++) {
+            echo "<p class='inline'>
+                    <span><b>Item: $product</b></span><br>" .
+                    bar128($product_id) .
+                    "<span><b>Price: $rate</b></span>
+                  </p>&nbsp;&nbsp;&nbsp;&nbsp;";
+        }
+        ?>
+    </div>
+</body>
+</html>

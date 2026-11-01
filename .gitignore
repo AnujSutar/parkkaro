@@ -1,0 +1,31 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Logs and temporary files
+*.log
+/tmp/
+/cache/
+
+# Backups and archives
+*.bak
+*.old
+*.zip
+*.rar
+
+# Database exports and local databases
+*.sql
+*.sqlite
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

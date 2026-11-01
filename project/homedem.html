@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Parkaro - Home</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <style>
+    :root {
+      --primary: #1b5e20;
+      --secondary: #388e3c;
+      --accent: #ffeb3b;
+      --light-bg: #f5f5f5;
+      --light-text: #2c2c2c;
+      --dark-bg: #121212;
+      --dark-text: #e0e0e0;
+      --light-box: #ffffff;
+      --dark-box: #2c2c2c;
+    }
+    html[data-theme='light'] {
+      --bg-color: var(--light-bg);
+      --text-color: var(--light-text);
+      --box-color: var(--light-box);
+    }
+    html[data-theme='dark'] {
+      --bg-color: var(--dark-bg);
+      --text-color: var(--dark-text);
+      --box-color: var(--dark-box);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 15px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+
+    nav ul {
+      display: flex;
+      list-style: none;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+    }
+
+    .toggle-btn {
+      background: var(--accent);
+      color: var(--primary);
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+    }
+
+    .user-profile img {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+    }
+
+    .hero, .availability-status {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .availability-status {
+      color: #4CAF50;
+      font-size: 1.2em;
+    }
+
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      padding: 10px 20px;
+    }
+
+    .search-bar input {
+      padding: 10px;
+      width: 60%;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px 0 0 4px;
+    }
+
+    .search-bar button {
+      padding: 10px 15px;
+      background: var(--secondary);
+      border: none;
+      color: white;
+      border-radius: 0 4px 4px 0;
+      cursor: pointer;
+    }
+
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .option-box {
+      background-color: var(--box-color);
+      padding: 20px;
+      border-radius: 10px;
+      width: 200px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: transform 0.3s;
+    }
+
+    .option-box:hover {
+      transform: scale(1.05);
+    }
+
+    .map-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      padding: 20px;
+    }
+
+    .map-section {
+      flex: 1 1 60%;
+      height: 400px;
+      margin-bottom: 20px;
+    }
+
+    .info-section {
+      flex: 1 1 35%;
+      background-color: var(--box-color);
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    .testimonial-slider, .recent-bookings, .contact-form {
+      width: 90%;
+      margin: 30px auto;
+      background-color: var(--box-color);
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .testimonial-slider h3,
+    .recent-bookings h3 {
+      margin-top: 0;
+    }
+
+    .contact-form input,
+    .contact-form textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    .contact-form button {
+      padding: 10px 20px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .chatbot-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #2196F3;
+      color: white;
+      padding: 15px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    footer {
+      background-color: var(--primary);
+      color: white;
+      text-align: center;
+      padding: 15px;
+      margin-top: 40px;
+    }
+
+    iframe.traffic-widget {
+      width: 100%;
+      border: none;
+      height: 300px;
+    }
+
+    @media (max-width: 768px) {
+      .map-container {
+        flex-direction: column;
+      }
+      .map-section, .info-section {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Parkaro</h1>
+    <nav>
+      <ul>
+        <li><a href="#">Home</a></li>
+        <li><a href="live_map.html">Map</a></li>
+        <li><a href="login.html">Login</a></li>
+        <li><a href="register.html">Register</a></li>
+      </ul>
+    </nav>
+    <div class="user-profile">
+      <img src="https://i.pravatar.cc/150?img=3" alt="User Avatar">
+      <span>John Doe</span>
+    </div>
+    <button class="toggle-btn" onclick="toggleTheme()">Toggle Theme</button>
+  </header>
+
+  <section class="hero">
+    <h2>Eco-friendly Parking Solutions</h2>
+    <p>Find, reserve, and manage your parking with ease.</p>
+  </section>
+
+  <div class="availability-status">
+    Available Parking Spots: <span id="available-spots">14</span>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" placeholder="Search for parking spots..." />
+    <button>Search</button>
+  </div>
+
+  <section class="options">
+    <div class="option-box"><a href="booking.html">Booking</a></div>
+    <div class="option-box"><a href="nearby.html">Nearby</a></div>
+    <div class="option-box"><a href="live_map.html">Map</a></div>
+  </section>
+
+  <section class="map-container">
+    <div class="map-section" id="map"></div>
+    <div class="info-section">
+      <h3>About Kolhapur</h3>
+      <p>Kolhapur is a cultural city known for its temples and vibrant lifestyle. Explore eco-parking solutions here.</p>
+    </div>
+  </section>
+
+  <iframe class="traffic-widget" src="https://www.traffic-update.co.uk/embed/"></iframe>
+
+  <section class="testimonial-slider">
+    <h3>User Testimonials</h3>
+    <p>"Parkaro helped me find safe parking every time I travel!" - Anjali</p>
+    <p>"Great interface, real-time map is a game changer." - Rohit</p>
+  </section>
+
+  <section class="recent-bookings">
+    <h3>Recent Bookings</h3>
+    <ul>
+      <li>Spot A1 - 10:30 AM</li>
+      <li>Spot B2 - 11:00 AM</li>
+    </ul>
+  </section>
+
+  <form class="contact-form">
+    <h3>Contact Us</h3>
+    <input type="text" placeholder="Your Name" required>
+    <input type="email" placeholder="Your Email" required>
+    <textarea rows="4" placeholder="Your Message" required></textarea>
+    <button type="submit">Send</button>
+  </form>
+
+  <div class="chatbot-button" onclick="alert('Chatbot activated!')">💬</div>
+
+  <footer>
+    <p>&copy; 2025 Parkaro. Built for a Sustainable Future.</p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const toggleTheme = () => {
+      const theme = document.documentElement.getAttribute("data-theme");
+      const newTheme = theme === "light" ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+      const map = L.map('map').setView([16.7017, 74.2433], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+      L.marker([16.7017, 74.2433]).addTo(map).bindPopup("Kolhapur - Park here!");
+    });
+  </script>
+</body>
+</html>

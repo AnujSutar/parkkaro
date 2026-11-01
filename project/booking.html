@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live map - Parkaro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Hanken+Grotesk:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="site.css">
+  <style>
+    .top { padding: 32px 0 16px; }
+    .top h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; }
+    .top p { color: var(--muted); margin: 8px 0 0; max-width: 62ch; }
+    .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+    .chip { border: 1.5px solid var(--line); background: #fff; color: var(--asphalt); border-radius: 999px; padding: 8px 16px; font: 600 .95rem 'Hanken Grotesk', 'Segoe UI', sans-serif; cursor: pointer; }
+    .chip[aria-pressed="true"] { background: var(--asphalt); color: #fff; border-color: var(--asphalt); }
+    .bar .spacer { flex: 1; }
+    #map { height: 460px; border-radius: var(--radius); border: 1px solid var(--line); background: #e9edf0; }
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 10px 0 0; color: var(--muted); font-size: .95rem; }
+    .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+    #status { margin: 8px 0 0; color: var(--muted); }
+    h2.near { font-size: 1.5rem; margin: 32px 0 4px; }
+    .note { color: var(--muted); margin: 0 0 14px; font-size: .95rem; }
+    ul.nearby { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    ul.nearby li { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+    ul.nearby .nm { font-weight: 700; }
+    ul.nearby .meta { color: var(--muted); font-size: .92rem; }
+    .badge { display: inline-block; font-size: .8rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+    .badge.free { background: #e6f4ec; color: var(--free); }
+    .badge.book { background: #e8efff; color: var(--sign-dark); }
+    ul.nearby .acts { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    ul.nearby .acts a { font-weight: 700; font-size: .92rem; }
+    @media (max-width: 600px) { #map { height: 340px; } }
+  </style>
+</head>
+<body>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="home.html"><span class="p" aria-hidden="true">P</span>Parkaro</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="home.html">Home</a>
+        <a href="find_parking.php">Find parking</a>
+        <a href="booking.html" aria-current="page">Live map</a>
+        <details>
+          <summary class="cta">Log in</summary>
+          <div class="menu">
+            <a href="index.php?login=true">User Login</a>
+            <a href="login1.php">Admin Login</a>
+          </div>
+        </details>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="top">
+      <h1>Live map</h1>
+      <p>See where you are and the parking around you. To reserve a space, use <a href="find_parking.php">Find parking</a>.</p>
+    </div>
+
+    <div class="bar">
+      <button type="button" class="chip" data-city="" aria-pressed="true">All cities</button>
+      <button type="button" class="chip" data-city="Kolhapur" aria-pressed="false">Kolhapur</button>
+      <button type="button" class="chip" data-city="Ajara" aria-pressed="false">Ajara</button>
+      <button type="button" class="chip" data-city="Gadhinglaj" aria-pressed="false">Gadhinglaj</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="locate">Use my location</button>
+    </div>
+
+    <div id="map" role="region" aria-label="Map of parking places"></div>
+    <div class="legend">
+      <span><i style="background:#1f8a5b"></i>Reservable place</span>
+      <span><i style="background:#1456d9"></i>Free parking</span>
+      <span><i style="background:#dc2626"></i>You</span>
+    </div>
+    <p id="status" role="status" aria-live="polite">Loading parking places&hellip;</p>
+
+    <h2 class="near" id="near-title">Nearby parking</h2>
+    <p class="note" id="near-note"></p>
+    <ul class="nearby" id="nearby"></ul>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <span>Distances are approximate straight-line estimates, not road distance or travel time.</span>
+      <span>Location only works on HTTPS or localhost, and only after you allow it.</span>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var statusEl = document.getElementById('status');
+    var listEl = document.getElementById('nearby');
+    var noteEl = document.getElementById('near-note');
+    var data = null, city = '', user = null, map = null, layers = [], userLayers = [];
+    var COLORS = { free: '#1456d9', bookable: '#1f8a5b' };
+
+    function setStatus(t) { statusEl.textContent = t; }
+    function ok(la, lo) { return typeof la === 'number' && typeof lo === 'number' && isFinite(la) && isFinite(lo) && Math.abs(la) <= 90 && Math.abs(lo) <= 180; }
+    function dist(a, b, c, d) { var R = 6371000, r = Math.PI / 180, dp = (c - a) * r, dl = (d - b) * r, h = Math.sin(dp / 2) * Math.sin(dp / 2) + Math.cos(a * r) * Math.cos(c * r) * Math.sin(dl / 2) * Math.sin(dl / 2); return 2 * R * Math.asin(Math.min(1, Math.sqrt(h))); }
+    function fmt(m) { return m < 1000 ? (Math.round(m / 10) * 10) + ' m' : (m / 1000).toFixed(m < 10000 ? 1 : 0) + ' km'; }
+    function dirUrl(p) {
+      var u = 'https://www.google.com/maps/dir/?api=1';
+      if (user) { u += '&origin=' + encodeURIComponent(user.lat + ',' + user.lng); }
+      return u + '&destination=' + encodeURIComponent(p.lat + ',' + p.lng) + '&travelmode=driving';
+    }
+    function el(tag, text, cls) { var e = document.createElement(tag); if (text) { e.textContent = text; } if (cls) { e.className = cls; } return e; }
+    function link(text, href, newTab) { var a = el('a', text); a.href = href; if (newTab) { a.target = '_blank'; a.rel = 'noopener noreferrer'; } return a; }
+
+    function points() {
+      var out = [];
+      data.bookable.forEach(function (b) { out.push({ type: 'bookable', id: b.id, name: b.name, city: b.city, lat: b.lat, lng: b.lng, rate: b.rate }); });
+      data.free.forEach(function (f) { out.push({ type: 'free', id: f.id, name: f.name, city: f.city, lat: f.lat, lng: f.lng }); });
+      return out.filter(function (p) { return ok(p.lat, p.lng) && (!city || p.city === city); });
+    }
+    function popup(p) {
+      var box = el('div');
+      box.appendChild(el('strong', p.name));
+      box.appendChild(el('div', p.type === 'bookable' ? 'Reservable parking, Rs ' + p.rate + ' per hour' : 'Free parking, availability unknown'));
+      if (user) { box.appendChild(el('div', 'About ' + fmt(dist(user.lat, user.lng, p.lat, p.lng)) + ' away (straight line)')); }
+      var a = link('Get directions', dirUrl(p), true); box.appendChild(a);
+      if (p.type === 'bookable') { box.appendChild(document.createTextNode(' · ')); box.appendChild(link('Reserve', 'reserve.php?location=' + encodeURIComponent(p.id))); }
+      return box;
+    }
+
+    function render() {
+      var pts = points(), ll = [];
+      if (map) {
+        layers.forEach(function (l) { map.removeLayer(l); }); layers = [];
+        pts.forEach(function (p) {
+          var m = L.circleMarker([p.lat, p.lng], { radius: 8, color: '#fff', weight: 2, fillColor: COLORS[p.type], fillOpacity: 0.95 }).addTo(map);
+          m.bindPopup(popup(p)); layers.push(m); ll.push([p.lat, p.lng]);
+        });
+      }
+      // nearby list: from the user's real position if known, otherwise from the chosen city's centre
+      var ref = user, refLabel = 'your location';
+      if (!ref && city && data.cities[city]) { ref = { lat: data.cities[city].lat, lng: data.cities[city].lng }; refLabel = city + ' centre'; }
+      listEl.textContent = '';
+      if (!ref) { noteEl.textContent = 'Allow your location or choose a city to see the nearest places.'; return ll; }
+      noteEl.textContent = 'The ' + Math.min(8, pts.length) + ' closest places to ' + refLabel + ', as the crow flies.';
+      pts.map(function (p) { return { p: p, d: dist(ref.lat, ref.lng, p.lat, p.lng) }; })
+         .sort(function (a, b) { return a.d - b.d; }).slice(0, 8)
+         .forEach(function (x) {
+           var li = el('li');
+           li.appendChild(el('span', x.p.name, 'nm'));
+           var t = el('span', x.p.type === 'bookable' ? 'Reservable' : 'Free parking', 'badge ' + (x.p.type === 'bookable' ? 'book' : 'free'));
+           li.appendChild(t);
+           li.appendChild(el('span', x.p.city + ' · about ' + fmt(x.d) + ' away', 'meta'));
+           var acts = el('div', '', 'acts');
+           acts.appendChild(link('Get directions', dirUrl(x.p), true));
+           if (x.p.type === 'bookable') { acts.appendChild(link('Reserve', 'reserve.php?location=' + encodeURIComponent(x.p.id))); }
+           li.appendChild(acts); listEl.appendChild(li);
+         });
+      if (!pts.length) { noteEl.textContent = 'No parking places found here yet.'; }
+      return ll;
+    }
+    function frame(ll) {
+      if (!map) { return; }
+      if (city && data.cities[city]) { map.setView([data.cities[city].lat, data.cities[city].lng], data.cities[city].zoom); }
+      else if (ll.length) { map.fitBounds(L.latLngBounds(ll), { padding: [24, 24] }); }
+    }
+
+    function onFix(pos, centre) {
+      var la = pos && pos.coords ? pos.coords.latitude : NaN, lo = pos && pos.coords ? pos.coords.longitude : NaN;
+      if (!ok(la, lo)) { setStatus('Your browser returned an invalid location. Choose a city instead.'); return; }
+      user = { lat: la, lng: lo };
+      if (map) {
+        userLayers.forEach(function (l) { map.removeLayer(l); }); userLayers = [];
+        var acc = pos.coords.accuracy;
+        if (typeof acc === 'number' && isFinite(acc) && acc > 0) { userLayers.push(L.circle([la, lo], { radius: acc, color: '#dc2626', weight: 1, fillOpacity: 0.08 }).addTo(map)); }
+        var um = L.circleMarker([la, lo], { radius: 9, color: '#fff', weight: 3, fillColor: '#dc2626', fillOpacity: 1 }).addTo(map);
+        um.bindPopup('You are here'); userLayers.push(um);
+        if (centre) { map.setView([la, lo], 15); }
+      }
+      render();
+      setStatus('Showing your location. Nearby places are listed below, nearest first.');
+    }
+    function onErr(err) {
+      var c = err && err.code;
+      if (c === 1) { setStatus('Location permission was denied. You can still choose a city and browse the map.'); }
+      else if (c === 3) { setStatus('Finding your location timed out. Press "Use my location" to try again, or choose a city.'); }
+      else { setStatus('Your location is not available right now. Choose a city to browse manually.'); }
+    }
+    function locate(centre) {
+      if (!navigator.geolocation) { setStatus('This browser does not support location. Choose a city to browse manually.'); return; }
+      if (window.isSecureContext === false) { setStatus('Location only works on HTTPS or localhost. Choose a city to browse manually.'); return; }
+      setStatus('Finding your location… please allow location access in your browser.');
+      navigator.geolocation.getCurrentPosition(function (p) { onFix(p, centre); }, onErr, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+    }
+
+    if (window.L) {
+      map = L.map('map').setView([16.5, 74.3], 9);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    } else {
+      document.getElementById('map').textContent = 'The map could not be loaded (it needs an internet connection). The nearby list still works.';
+    }
+
+    document.getElementById('locate').addEventListener('click', function () { locate(true); });
+    Array.prototype.forEach.call(document.querySelectorAll('.chip'), function (b) {
+      b.addEventListener('click', function () {
+        city = b.getAttribute('data-city') || '';
+        Array.prototype.forEach.call(document.querySelectorAll('.chip'), function (o) { o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+        if (data) { frame(render()); }
+      });
+    });
+
+    fetch('parking_points.php', { credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) { throw new Error('http ' + r.status); } return r.json(); })
+      .then(function (d) {
+        data = d; frame(render());
+        setStatus('Showing ' + (d.free.length + d.bookable.length) + ' parking places. Your location is requested once and never tracked in the background.');
+        locate(false);
+      })
+      .catch(function () { setStatus('Parking places could not be loaded. Reload the page, or use Find parking.'); });
+  })();
+  </script>
+</body>
+</html>

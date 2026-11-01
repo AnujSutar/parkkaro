@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Parkaro - Navbar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      background-color: rgba(44, 62, 80, 0.95);
+      color: white;
+      padding: 15px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .nav-middle {
+      flex: 1;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .search-bar {
+      max-width: 500px;
+      width: 90%;
+      padding: 8px 15px;
+      border-radius: 20px;
+      border: none;
+      font-size: 1em;
+      outline: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    nav {
+      display: flex;
+      gap: 20px;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+
+    nav a:hover {
+      background-color: #1abc9c;
+      color: #fff;
+    }
+
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background-color: #34495e;
+      border-radius: 6px;
+      overflow: hidden;
+      z-index: 99;
+    }
+
+    .dropdown-content a {
+      display: block;
+      padding: 10px 16px;
+      color: white;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #1abc9c;
+      color: black;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .nav-middle {
+        text-align: left;
+        width: 100%;
+        margin: 10px 0;
+      }
+
+      nav {
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Parkaro</div>
+
+    <div class="nav-middle">
+      <input type="text" class="search-bar" placeholder="Search for area, city...">
+    </div>
+
+    <nav>
+      <div class="dropdown">
+        <a href="#">City</a>
+        <div class="dropdown-content">
+          <a href="kolhapur.html">Kolhapur</a>
+          <a href="gadhinglaj.html">Gadhinglaj</a>
+          <a href="ajara.html">Ajara</a>
+        </div>
+      </div>
+      <a href="live.html">Map</a>
+      <a href="login.php">Login</a>
+      <a href="register.php">Register</a>
+    </nav>
+  </header>
+
+</body>
+</html>

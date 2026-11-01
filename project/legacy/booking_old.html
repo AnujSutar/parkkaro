@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parking Booking System</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+  
+    body {
+      background-color: #f4f7f9;
+      color: #333;
+      line-height: 1.6;
+    }
+  
+    /* Navigation Bar */
+    nav {
+      background-color: #2c3e50;
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+    }
+  
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+  
+    nav a:hover {
+      color: #18bc9c;
+    }
+  
+    /* Main Content Area */
+    .main-content {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  
+    form label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  
+    form input,
+    form select {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+  
+    form button {
+      margin-top: 1.5rem;
+      padding: 0.75rem 1.5rem;
+      background-color: #18bc9c;
+      border: none;
+      color: white;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+  
+    form button:hover {
+      background-color: #149e82;
+    }
+  
+    /* Map Styling */
+    #map {
+      height: 400px;
+      width: 90%;
+      max-width: 800px;
+      margin: 2rem auto;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+    }
+  
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      nav {
+        flex-direction: column;
+        gap: 1rem;
+      }
+  
+      .main-content,
+      #map {
+        width: 90%;
+        margin: 1rem auto;
+      }
+    }
+  </style>
+  
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav>
+    <a href="home.html">Home</a>
+    <a href="live_map.php">Live Map</a>
+    <a href="nearby.html">Nearby</a>
+  </nav>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Booking Form Section -->
+    <form id="bookingForm" action="book.php" method="POST">
+      <!-- User Information -->
+      <label for="userName">Your Name:</label>
+      <input type="text" id="userName" name="userName" placeholder="Enter your full name" required>
+
+      <label for="userEmail">Your Email:</label>
+      <input type="email" id="userEmail" name="userEmail" placeholder="Enter your email" required>
+
+      <label for="carNumber">Car Number:</label>
+      <input type="text" id="carNumber" name="carNumber" placeholder="Enter your car number" required>
+
+      <label for="phoneNumber">Phone Number:</label>
+      <input type="text" id="phoneNumber" name="phoneNumber" placeholder="Enter your phone number" required>
+
+      <!-- Parking Location and Time -->
+      <label>Select City:</label>
+      <select id="city" name="city" required onchange="updateMap()">
+        <option value="">-- Select City --</option>
+        <option value="Ajara">Ajara</option>
+        <option value="Gadhinglaj">Gadhinglaj</option>
+        <option value="Kolhapur">Kolhapur</option>
+      </select>
+
+      <label>Select Location:</label>
+      <select id="location" name="location" required>
+        <option value="">-- Select Location --</option>
+      </select>
+
+      <label>How many hours do you need to park?</label>
+      <input type="number" id="parkingHours" name="parking_hours" min="1" required oninput="calculateCost()" />
+
+      <label>Total Price:</label>
+      <input type="text" id="totalPrice" name="totalPrice" readonly />
+
+      <button type="submit">Confirm Booking</button>
+    </form>
+  </div>
+
+  <!-- Map Section -->
+  <div id="map"></div>
+
+  <!-- JavaScript for Leaflet and features -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    let map;
+    let currentMarker;
+
+    // Initialize the map
+    function initMap() {
+      const defaultLocation = { lat: 16.705, lng: 74.230 }; // Default map location (Kolhapur)
+      map = L.map('map').setView(defaultLocation, 12); // Set map's initial view
+
+      // Add OpenStreetMap tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      // Place the marker at the default location
+      currentMarker = L.marker(defaultLocation).addTo(map);
+    }
+
+    // Function to update locations based on selected city
+    function updateMap() {
+      const city = document.getElementById("city").value;
+      const locationSelect = document.getElementById("location");
+      locationSelect.innerHTML = "<option value=''>-- Select Location --</option>";
+
+      let locations = [];
+      let center = { lat: 16.705, lng: 74.230 }; // Default (Kolhapur)
+
+      if (city === "Ajara") {
+        locations = ["Ajara Main Market", "Ajara Bus Stand", "Ajara Railway Station"];
+        center = { lat: 16.610, lng: 74.212 }; // Ajara
+      } else if (city === "Gadhinglaj") {
+        locations = ["Gadhinglaj Market", "Gadhinglaj Bus Stand", "Gadhinglaj Railway Station"];
+        center = { lat: 16.235, lng: 74.247 }; // Gadhinglaj
+      } else if (city === "Kolhapur") {
+        locations = ["Kolhapur Railway Station", "Shahu Market", "Kolhapur Bus Stand"];
+        center = { lat: 16.704, lng: 74.243 }; // Kolhapur
+      }
+
+      locations.forEach(function(location) {
+        const option = document.createElement("option");
+        option.value = location;
+        option.text = location;
+        locationSelect.appendChild(option);
+      });
+
+      // Move map center to the selected city location
+      map.setView(center, 12);
+
+      // Add a marker to the new location
+      if (currentMarker) {
+        map.removeLayer(currentMarker); // Remove previous marker if any
+      }
+
+      currentMarker = L.marker(center).addTo(map);
+    }
+
+    // Function to calculate price based on number of hours
+    function calculateCost() {
+      const hours = document.getElementById('parkingHours').value;
+      const costPerHour = 50; // Example cost per hour
+
+      if (hours) {
+        const totalCost = hours * costPerHour;
+        document.getElementById('totalPrice').value = '₹' + totalCost;
+      }
+    }
+
+    // Load the map on page load
+    window.onload = function() {
+      initMap();
+    };
+  </script>
+
+</body>
+</html>

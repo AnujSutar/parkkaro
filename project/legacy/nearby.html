@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Nearby Parking</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        #navbar {
+            width: 200px;
+            background-color: #333;
+            color: white;
+            padding-top: 20px;
+            position: fixed;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        #navbar h2 {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        #navbar a {
+            color: white;
+            padding: 15px;
+            text-decoration: none;
+            text-align: center;
+            border-bottom: 1px solid #444;
+        }
+
+        #navbar a:hover {
+            background-color: #575757;
+        }
+
+        #main-content {
+            margin-left: 200px;
+            /* Space for the navbar */
+            width: 100%;
+            padding: 20px;
+        }
+
+        #map {
+            height: 80vh;
+            width: 100%;
+        }
+
+        .buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            background: #f4f4f4;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="navbar">
+        <h2>Parkaro</h2>
+        <a href="home.html">Home</a>
+        <a href="nearby.html">Find Nearby Parking</a>
+
+        <footer>&copy; 2024 ParkEasy | Designed by Pratik</footer>
+    </div>
+
+    <div id="main-content">
+        <h2 style="text-align: center;">Find Nearby Parking</h2>
+        <div id="map"></div>
+        <div class="buttons">
+            <button onclick="findNearestParking()">Find Nearest Parking</button>
+            <button onclick="skipParking()">Skip This Parking</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Parking spots array (updated with more locations)
+        const parkingSpots = [
+
+            { id: 1, name: 'Ajara Bus Stand Parking', lat: 16.1160, lon: 74.2109 },
+{ id: 2, name: 'Ajara Main Market Parking', lat: 16.1172, lon: 74.2125 },
+{ id: 3, name: 'Shree Ram Temple Parking', lat: 16.1155, lon: 74.2112 },
+{ id: 4, name: 'Ajara Post Office Parking', lat: 16.1148, lon: 74.2095 },
+{ id: 5, name: 'Ajara High School Parking', lat: 16.1165, lon: 74.2133 },
+{ id: 6, name: 'Ajara ST Depot Parking', lat: 16.1180, lon: 74.2110 },
+{ id: 7, name: 'Ajara Tahsil Office Parking', lat: 16.1138, lon: 74.2080 },
+{ id: 8, name: 'Ajara Rural Hospital Parking', lat: 16.1175, lon: 74.2148 },
+{ id: 9, name: 'Ajara Gram Panchayat Parking', lat: 16.1150, lon: 74.2120 },
+{ id: 10, name: 'Ajara Petrol Pump Parking', lat: 16.1168, lon: 74.2102 },
+{ id: 11, name: 'Ajara Weekly Bazaar Ground Parking', lat: 16.1190, lon: 74.2155 },
+{ id: 12, name: 'Ajara Court Complex Parking', lat: 16.1145, lon: 74.2101 },
+{ id: 13, name: 'Ganesh Mandir Parking', lat: 16.1129, lon: 74.2072 },
+{ id: 14, name: 'Ajara Krushi Seva Kendra Parking', lat: 16.1185, lon: 74.2137 },
+{ id: 15, name: 'Ajara Bank of India Parking', lat: 16.1152, lon: 74.2089 },
+{ id: 16, name: 'Ajara ZP School Parking', lat: 16.1161, lon: 74.2093 },
+{ id: 17, name: 'Ajara Industrial Area Parking', lat: 16.1135, lon: 74.2065 },
+{ id: 18, name: 'Ajara Public Garden Parking', lat: 16.1170, lon: 74.2142 },
+{ id: 19, name: 'Ajara Library & Community Hall Parking', lat: 16.1182, lon: 74.2105 },
+{ id: 20, name: 'Ajara Vegetable Market Parking', lat: 16.1140, lon: 74.2090 },
+{ id: 21, name: 'Gadhinglaj Bus Stand Parking', lat: 16.2265, lon: 74.3512 },
+{ id: 22, name: 'Gadhinglaj Market Yard Parking', lat: 16.2248, lon: 74.3533 },
+{ id: 23, name: 'Gadhinglaj ST Depot Parking', lat: 16.2251, lon: 74.3521 },
+{ id: 24, name: 'Shivaji Chowk Parking', lat: 16.2275, lon: 74.3505 },
+{ id: 25, name: 'Gadhinglaj Police Station Parking', lat: 16.2259, lon: 74.3548 },
+{ id: 26, name: 'Ganpati Temple Parking', lat: 16.2262, lon: 74.3489 },
+{ id: 27, name: 'Government Hospital Parking', lat: 16.2233, lon: 74.3500 },
+{ id: 28, name: 'Tehsil Office Parking', lat: 16.2280, lon: 74.3519 },
+{ id: 29, name: 'Court Complex Parking', lat: 16.2271, lon: 74.3535 },
+{ id: 30, name: 'Gadhinglaj College Campus Parking', lat: 16.2290, lon: 74.3491 },
+{ id: 31, name: 'Gadhinglaj Railway Reservation Center Parking', lat: 16.2240, lon: 74.3550 },
+{ id: 32, name: 'Jaystambh Chowk Parking', lat: 16.2260, lon: 74.3498 },
+{ id: 33, name: 'Dr. Babasaheb Ambedkar Hall Parking', lat: 16.2253, lon: 74.3509 },
+{ id: 34, name: 'ZP High School Parking', lat: 16.2277, lon: 74.3523 },
+{ id: 35, name: 'Mangalwar Bazaar Ground Parking', lat: 16.2239, lon: 74.3542 },
+{ id: 36, name: 'State Bank of India Parking', lat: 16.2285, lon: 74.3515 },
+{ id: 37, name: 'Ganesh Talkies Parking Area', lat: 16.2269, lon: 74.3494 },
+{ id: 38, name: 'RTO Office Parking', lat: 16.2245, lon: 74.3482 },
+{ id: 39, name: 'Gadhinglaj Industrial Estate Parking', lat: 16.2292, lon: 74.3555 },
+{ id: 40, name: 'Gadhinglaj Vegetable Market Parking', lat: 16.2258, lon: 74.3502 },
+{ id: 41, name: 'Mahagaon Bus Stand Parking', lat: 16.1505, lon: 74.3311 },
+{ id: 42, name: 'Mahagaon Main Market Parking', lat: 16.1518, lon: 74.3332 },
+{ id: 43, name: 'Mahagaon Gram Panchayat Parking', lat: 16.1492, lon: 74.3300 },
+{ id: 44, name: 'Mahagaon Police Station Parking', lat: 16.1523, lon: 74.3328 },
+{ id: 45, name: 'Mahagaon ZP School Parking', lat: 16.1487, lon: 74.3295 },
+{ id: 46, name: 'Mahagaon Rural Hospital Parking', lat: 16.1509, lon: 74.3340 },
+{ id: 47, name: 'Mahagaon Weekly Bazaar Parking', lat: 16.1530, lon: 74.3315 },
+{ id: 48, name: 'Mahagaon Post Office Parking', lat: 16.1510, lon: 74.3302 },
+{ id: 49, name: 'Mahagaon Shiv Temple Parking', lat: 16.1499, lon: 74.3320 },
+{ id: 50, name: 'Mahagaon Bank of Maharashtra Parking', lat: 16.1525, lon: 74.3308 },
+{ id: 51, name: 'SGM College Main Gate Parking', lat: 16.1235, lon: 74.2040 },
+{ id: 52, name: 'SGM College Library Side Parking', lat: 16.1238, lon: 74.2049 },
+{ id: 53, name: 'SGM College Staff Parking', lat: 16.1241, lon: 74.2035 },
+{ id: 54, name: 'Karadwadi ZP School Parking', lat: 16.1255, lon: 74.2022 },
+{ id: 55, name: 'SGM College Playground Side Parking', lat: 16.1245, lon: 74.2055 },
+{ id: 56, name: 'SGM College Hostel Parking', lat: 16.1225, lon: 74.2030 },
+{ id: 57, name: 'Karadwadi Temple Parking', lat: 16.1260, lon: 74.2041 },
+{ id: 58, name: 'SGM College Canteen Side Parking', lat: 16.1248, lon: 74.2047 },
+{ id: 59, name: 'SGM College Auditorium Parking', lat: 16.1250, lon: 74.2039 },
+{ id: 60, name: 'Karadwadi Bus Stop Parking', lat: 16.1270, lon: 74.2025 },
+{ id: 61, name: 'Kolhapur Railway Station Parking', lat: 16.7050, lon: 74.2433 },
+{ id: 62, name: 'Rankala Lake Parking', lat: 16.6910, lon: 74.2289 },
+{ id: 63, name: 'Kolhapur Bus Stand Parking', lat: 16.7042, lon: 74.2449 },
+{ id: 64, name: 'Shree Mahalaxmi Temple Parking', lat: 16.6985, lon: 74.2305 },
+{ id: 65, name: 'Kolhapur Market Yard Parking', lat: 16.7030, lon: 74.2483 },
+{ id: 66, name: 'New Palace Parking', lat: 16.7135, lon: 74.2270 },
+{ id: 67, name: 'Kolhapur Airport Parking', lat: 16.7011, lon: 74.2300 },
+{ id: 68, name: 'Mahalaxmi Temple Parking', lat: 16.6980, lon: 74.2310 },
+{ id: 69, name: 'Kolhapur Shivaji Udyan Parking', lat: 16.7058, lon: 74.2460 },
+{ id: 70, name: 'Bhausingji Dhabekar Parking', lat: 16.6985, lon: 74.2321 },
+{ id: 71, name: 'Kolhapur High Court Parking', lat: 16.6968, lon: 74.2307 },
+{ id: 72, name: 'Panchganga Riverfront Parking', lat: 16.7005, lon: 74.2275 },
+{ id: 73, name: 'Siddhivinayak Temple Parking', lat: 16.6962, lon: 74.2320 },
+{ id: 74, name: 'Rajarampuri Market Parking', lat: 16.7073, lon: 74.2415 },
+{ id: 75, name: 'Kolhapur University Parking', lat: 16.7047, lon: 74.2158 },
+{ id: 76, name: 'Kolhapur Stadium Parking', lat: 16.7001, lon: 74.2490 },
+{ id: 77, name: 'Shivaji Park Parking', lat: 16.7052, lon: 74.2502 },
+{ id: 78, name: 'Kolhapur Malls Parking', lat: 16.7006, lon: 74.2458 },
+{ id: 79, name: 'Laxmipuram Parking', lat: 16.7035, lon: 74.2379 },
+{ id: 80, name: 'Kolhapur IT Park Parking', lat: 16.7210, lon: 74.2196 }
+
+
+
+        ];
+
+        let map = L.map('map').setView([0, 0], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        let currentLocationMarker;
+        let currentSpotIndex = 0;
+
+        navigator.geolocation.getCurrentPosition(position => {
+            const userLat = position.coords.latitude;
+            const userLon = position.coords.longitude;
+            map.setView([userLat, userLon], 14);
+
+            currentLocationMarker = L.marker([userLat, userLon], { icon: L.divIcon({ className: 'user-icon', html: '📍' }) })
+                .addTo(map)
+                .bindPopup('<b>Your Current Location</b>')
+                .openPopup();
+        }, () => {
+            alert("Unable to fetch your location.");
+        });
+
+        // Add parking spots to map
+        parkingSpots.forEach(spot => {
+            L.marker([spot.lat, spot.lon])
+                .addTo(map)
+                .bindPopup(`<b>${spot.name}</b>`);
+        });
+
+        // Find nearest parking spot
+        function findNearestParking() {
+            navigator.geolocation.getCurrentPosition(position => {
+                const userLat = position.coords.latitude;
+                const userLon = position.coords.longitude;
+
+                let nearestSpot = null;
+                let minDistance = Infinity;
+
+                parkingSpots.forEach(spot => {
+                    const distance = getDistance(userLat, userLon, spot.lat, spot.lon);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestSpot = spot;
+                    }
+                });
+
+                if (nearestSpot) {
+                    alert(`Nearest Parking: ${nearestSpot.name} (${minDistance.toFixed(2)} km away)`);
+                    map.setView([nearestSpot.lat, nearestSpot.lon], 15);
+                    L.marker([nearestSpot.lat, nearestSpot.lon]).addTo(map).bindPopup(`<b>${nearestSpot.name}</b>`);
+                }
+            }, () => {
+                alert("Unable to fetch your location.");
+            });
+        }
+
+        // Skip to next parking spot
+        function skipParking() {
+            currentSpotIndex = (currentSpotIndex + 1) % parkingSpots.length;
+            const nextSpot = parkingSpots[currentSpotIndex];
+            alert(`Next Parking Spot: ${nextSpot.name}`);
+            map.setView([nextSpot.lat, nextSpot.lon], 14);
+        }
+
+        // Calculate distance (Haversine formula)
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = toRadians(lat2 - lat1);
+            const dLon = toRadians(lon2 - lon1);
+            const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        function toRadians(deg) {
+            return deg * (Math.PI / 180);
+        }
+    </script>
+</body>
+
+</html>

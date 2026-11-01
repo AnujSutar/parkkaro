@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kolhapur Parking Map</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+  />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header, footer {
+      background-color: #333;
+      color: white;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h2 {
+      margin: 0;
+    }
+    .home-button {
+      background: none;
+      border: 1px solid white;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 5px;
+      text-decoration: none;
+    }
+    .home-button:hover {
+      background-color: white;
+      color: #333;
+    }
+    .container {
+      padding: 20px;
+    }
+    .location-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .location {
+      flex: 1 1 calc(50% - 20px);
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .location button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .location button:hover {
+      background-color: #45a049;
+    }
+    .distance {
+      font-size: 14px;
+      color: #333;
+      margin-left: 20px;
+    }
+    #map {
+      height: 400px;
+      width: 100%;
+      margin-top: 20px;
+    }
+    .booking-section {
+      background-color: #f0f8ff;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .booking-section h3 {
+      margin-top: 0;
+    }
+    .booking-section form {
+      display: grid;
+      gap: 15px;
+    }
+    .booking-section input,
+    .booking-section select {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
+    .booking-section button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .booking-section button:hover {
+      background-color: #0056b3;
+    }
+    footer {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>Parkaro - Kolhapur Map</h2>
+    <a href="home.html" class="home-button">Home</a>
+  </header>
+
+  <div class="container">
+    <div class="location-grid" id="locationList"></div>
+    <div id="map"></div>
+
+    <section class="booking-section">
+      <h3>📅 Book a Private Parking Spot</h3>
+      <form id="bookingForm">
+        <label>Name:
+          <input type="text" name="name" required />
+        </label>
+        <label>Phone:
+          <input type="tel" name="phone" required pattern="[0-9]{10}" />
+        </label>
+        <label>Vehicle Number:
+          <input type="text" name="vehicle" required />
+        </label>
+        <label>Date & Time:
+          <input type="datetime-local" name="datetime" required />
+        </label>
+        <label>Select Location:
+          <select name="location" required>
+            <option value="">-- Select --</option>
+            <option value="Kolhapur Railway Station">Kolhapur Railway Station</option>
+            <option value="Rankala Lake">Rankala Lake</option>
+            <option value="Shivaji University">Shivaji University</option>
+          </select>
+        </label>
+        <button type="submit">Book Now</button>
+      </form>
+      <div id="ticket" style="margin-top:20px; display:none;"></div>
+    </section>
+  </div>
+
+  <footer>
+    This project is created for College Mega Project.
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+const locations = [
+  { name: "Kolhapur Railway Station", lat: 16.7050, lng: 74.2433 },
+  { name: "Rankala Lake", lat: 16.6956, lng: 74.2171 },
+  { name: "Panhala Fort", lat: 16.8133, lng: 74.1115 },
+  { name: "Mahalaxmi Mandir", lat: 16.6950, lng: 74.2433 },
+  { name: "Kolhapur Bus Stand", lat: 16.7078, lng: 74.2430 },
+  { name: "New Shahupuri", lat: 16.7090, lng: 74.2365 },
+  { name: "Rajaram College", lat: 16.7145, lng: 74.2400 },
+  { name: "Shahu Market", lat: 16.7040, lng: 74.2405 },
+  { name: "Dream World Water Park", lat: 16.6821, lng: 74.2293 },
+  { name: "Kasba Bawda", lat: 16.6847, lng: 74.2500 },
+  { name: "Udyamnagar", lat: 16.7140, lng: 74.2560 },
+  { name: "Shivaji University", lat: 16.6872, lng: 74.2330 },
+  { name: "Tarabai Park", lat: 16.7155, lng: 74.2398 },
+  { name: "Shahupuri 2nd Lane", lat: 16.7072, lng: 74.2350 },
+  { name: "Laxmipuri", lat: 16.6995, lng: 74.2365 },
+  { name: "Jadhavwadi", lat: 16.7325, lng: 74.2651 },
+  { name: "Kawala Naka", lat: 16.7160, lng: 74.2453 },
+  { name: "Ichalkaranji Phata", lat: 16.7123, lng: 74.2317 },
+  { name: "Kolhapur Airport Area", lat: 16.6649, lng: 74.2894 },
+  { name: "Kolhapur MIDC", lat: 16.7110, lng: 74.2600 }
+];
+
+
+    function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return (R * c).toFixed(2);
+    }
+
+    function displayLocations(lat, lng) {
+      const container = document.getElementById("locationList");
+      container.innerHTML = "";
+      locations.forEach(loc => {
+        const distance = getDistanceFromLatLonInKm(lat, lng, loc.lat, loc.lng);
+        const div = document.createElement("div");
+        div.className = "location";
+        div.innerHTML = `
+          <span>${loc.name}</span>
+          <div>
+            <span class="distance">${distance} km</span>
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}" target="_blank">
+              <button>Get Directions</button>
+            </a>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    navigator.geolocation.getCurrentPosition(position => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      displayLocations(lat, lng);
+      showMap(lat, lng);
+    }, () => {
+      alert("Location access denied. Using default location (Kolhapur)." );
+      const lat = 16.7050, lng = 74.2433;
+      displayLocations(lat, lng);
+      showMap(lat, lng);
+    });
+
+    function showMap(lat, lng) {
+      const map = L.map('map').setView([lat, lng], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      locations.forEach(loc => {
+        L.marker([loc.lat, loc.lng]).addTo(map)
+          .bindPopup(loc.name);
+      });
+    }
+
+    document.getElementById("bookingForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const form = new FormData(e.target);
+      const ticket = `
+        <h4>🎫 Booking Confirmed</h4>
+        <p><strong>Name:</strong> ${form.get("name")}</p>
+        <p><strong>Phone:</strong> ${form.get("phone")}</p>
+        <p><strong>Vehicle:</strong> ${form.get("vehicle")}</p>
+        <p><strong>Date/Time:</strong> ${form.get("datetime")}</p>
+        <p><strong>Location:</strong> ${form.get("location")}</p>
+        <a href="data:text/plain;charset=utf-8,${encodeURIComponent(`Booking Ticket\nName: ${form.get("name")}\nPhone: ${form.get("phone")}\nVehicle: ${form.get("vehicle")}\nDate/Time: ${form.get("datetime")}\nLocation: ${form.get("location")}`)}" download="ParkingTicket.txt">
+          <button>Download Ticket</button>
+        </a>
+      `;
+      const ticketDiv = document.getElementById("ticket");
+      ticketDiv.innerHTML = ticket;
+      ticketDiv.style.display = "block";
+      e.target.reset();
+    });
+  </script>
+</body>
+</html>

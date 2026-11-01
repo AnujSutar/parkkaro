@@ -1,0 +1,34 @@
+# Secrets and local configuration - NEVER commit these
+.env
+*.key
+storage/app.key
+admindetails.txt
+config.local.php
+
+# Database dumps and backups (may contain real customer data)
+*.sql.gz
+*.dump
+*.bak
+backup*/
+# database/schema.sql is the structure-only file and IS committed; ignore any data dumps:
+dump*.sql
+*_data.sql
+
+# Logs, caches, generated files
+*.log
+error_log
+storage/*
+!storage/.gitignore
+!storage/.htaccess
+tmp/
+*.pdf
+
+# Tools and OS
+vendor/
+!dompdf/vendor/
+node_modules/
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+*.swp

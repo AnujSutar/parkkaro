@@ -1,0 +1,251 @@
+<?php
+session_start();  // Start the session
+
+// Assuming the admin's zone is stored in the session after login
+if (!isset($_SESSION['admin_zone'])) {
+    // Redirect to login page if the admin is not logged in
+    header("Location: login.php");
+    exit();
+}
+
+$admin_zone = $_SESSION['admin_zone']; // Get the logged-in admin's zone
+
+// Connect to the database
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "parkaro";  // Replace with your actual database name
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Query to get the total number of bookings for the admin's zone
+$sql_total = "SELECT COUNT(*) AS total FROM bookings WHERE admin_zone = '$admin_zone'";
+$result_total = $conn->query($sql_total);
+$total_bookings = $result_total->fetch_assoc()['total'];
+
+// Query to get the count of bookings by the admin's zone (excluding status)
+$sql_pending = "SELECT COUNT(*) AS pending FROM bookings WHERE admin_zone = '$admin_zone' AND status = 'Pending'";
+$result_pending = $conn->query($sql_pending);
+$pending_bookings = $result_pending->fetch_assoc()['pending'];
+
+$sql_confirmed = "SELECT COUNT(*) AS confirmed FROM bookings WHERE admin_zone = '$admin_zone' AND status = 'Confirmed'";
+$result_confirmed = $conn->query($sql_confirmed);
+$confirmed_bookings = $result_confirmed->fetch_assoc()['confirmed'];
+
+$sql_canceled = "SELECT COUNT(*) AS canceled FROM bookings WHERE admin_zone = '$admin_zone' AND status = 'Canceled'";
+$result_canceled = $conn->query($sql_canceled);
+$canceled_bookings = $result_canceled->fetch_assoc()['canceled'];
+
+// Get all bookings for the admin's zone
+$sql_bookings = "SELECT * FROM bookings WHERE admin_zone = '$admin_zone' ORDER BY booking_time DESC";
+$result_bookings = $conn->query($sql_bookings);
+
+// Close the connection
+$conn->close();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Candela&display=swap" rel="stylesheet">
+    <style>
+        /* Basic reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .dashboard-container {
+            width: 80%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .overview {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .overview div {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 23%;
+            text-align: center;
+        }
+
+        .overview div h3 {
+            margin-bottom: 10px;
+        }
+
+        .overview div p {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .action-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .search-bar {
+            margin: 20px 0;
+        }
+
+        .search-bar input {
+            padding: 10px;
+            width: 250px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+
+        <!-- Dashboard Overview -->
+        <div class="overview">
+            <div>
+                <h3>Total Bookings</h3>
+                <p><?php echo $total_bookings; ?></p>
+            </div>
+            <div>
+                <h3>Pending Bookings</h3>
+                <p><?php echo $pending_bookings; ?></p>
+            </div>
+            <div>
+                <h3>Confirmed Bookings</h3>
+                <p><?php echo $confirmed_bookings; ?></p>
+            </div>
+            <div>
+                <h3>Canceled Bookings</h3>
+                <p><?php echo $canceled_bookings; ?></p>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="search-bar">
+            <input type="text" placeholder="Search by Location, User or Car Number" id="search-bookings" onkeyup="searchBookings()">
+        </div>
+
+        <!-- Bookings Table -->
+        <table id="bookings-table">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Location Name</th>
+                    <th>User Name</th>
+                    <th>Car Number</th>
+                    <th>Booking Date & Time</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while ($booking = $result_bookings->fetch_assoc()): ?>
+                    <tr>
+                        <td><?php echo $booking['id']; ?></td>
+                        <td><?php echo $booking['location_name']; ?></td>
+                        <td><?php echo $booking['name']; ?></td>
+                        <td><?php echo $booking['car_number']; ?></td>
+                        <td><?php echo $booking['booking_time']; ?></td>
+                        <td><?php echo $booking['status']; ?></td>
+                        <td>
+                            <button class="action-btn" onclick="updateBookingStatus(<?php echo $booking['id']; ?>, 'Confirmed')">Confirm</button>
+                            <button class="action-btn" onclick="updateBookingStatus(<?php echo $booking['id']; ?>, 'Canceled')">Cancel</button>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Function to search bookings
+        function searchBookings() {
+            const input = document.getElementById('search-bookings').value.toLowerCase();
+            const rows = document.querySelectorAll('#bookings-table tbody tr');
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const location = cells[1].innerText.toLowerCase();
+                const user = cells[2].innerText.toLowerCase();
+                const car = cells[3].innerText.toLowerCase();
+
+                if (location.includes(input) || user.includes(input) || car.includes(input)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Function to update booking status
+        function updateBookingStatus(bookingId, status) {
+            if (confirm('Are you sure you want to update the status?')) {
+                // Send an AJAX request to update the booking status
+                fetch('update_booking_status.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `id=${bookingId}&status=${status}`
+                })
+                .then(response => response.text())
+                .then(data => {
+                    alert(data);
+                    location.reload();  // Reload the page to reflect updated status
+                });
+            }
+        }
+    </script>
+
+</body>
+</html>

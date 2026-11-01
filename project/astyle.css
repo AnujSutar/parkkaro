@@ -1,0 +1,92 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+    padding-bottom: 60px;
+  }
+  
+  .navbar {
+    background-color: #2c3e50;
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .nav-left {
+    font-size: 22px;
+    font-weight: bold;
+  }
+  
+  .nav-right a {
+    color: white;
+    margin-left: 20px;
+    text-decoration: none;
+  }
+  
+  .nav-right a:hover {
+    text-decoration: underline;
+  }
+  
+  .main-content {
+    padding: 30px;
+    text-align: center;
+  }
+  
+  h1 {
+    color: #333;
+    margin-bottom: 25px;
+  }
+  
+  .location-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .location-row {
+    display: flex;
+    justify-content: space-between;
+    width: 90%;
+    max-width: 500px;
+    background: #ffffff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    align-items: center;
+  }
+  
+  .location-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+  }
+  
+  .location-button:hover {
+    background-color: #2980b9;
+  }
+  
+  .distance-info {
+    font-size: 14px;
+    color: #333;
+    margin-left: 20px;
+  }
+  
+  .footer {
+    background-color: #222;
+    color: white;
+    text-align: center;
+    padding: 12px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    font-size: 14px;
+  }
+  

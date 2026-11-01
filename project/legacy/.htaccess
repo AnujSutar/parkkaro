@@ -1,0 +1,3 @@
+# Old files kept for reference only. They still contain the original (unsafe) code,
+# so the web server must never serve them.
+Require all denied

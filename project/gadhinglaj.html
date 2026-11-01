@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gadhinglaj Parking</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    header, footer {
+      background-color: #333;
+      color: white;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h2 {
+      margin: 0;
+    }
+
+    .nav-button {
+      background: none;
+      border: 1px solid white;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 5px;
+      text-decoration: none;
+    }
+
+    .nav-button:hover {
+      background-color: white;
+      color: #333;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .location-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .location {
+      flex: 1 1 calc(50% - 20px);
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .location button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .location button:hover {
+      background-color: #45a049;
+    }
+
+    #map {
+      height: 300px;
+      margin: 20px 0;
+      border-radius: 10px;
+    }
+
+    .news, .booking-form {
+      margin: 20px 0;
+    }
+
+    form input, form select {
+      display: block;
+      margin: 10px 0;
+      padding: 8px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    form button {
+      padding: 10px 15px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    form button:hover {
+      background-color: #555;
+    }
+
+    @media (max-width: 768px) {
+      .location {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h2>Parkaro - Gadhinglaj</h2>
+    <a href="home.html" class="nav-button">Home</a>
+  </header>
+
+  <div class="container">
+    <h3>Available Parking Locations</h3>
+    <div class="location-grid" id="locationList"></div>
+
+    <h3>Live Map</h3>
+    <div id="map"></div>
+
+    <div class="booking-form">
+      <h3>Book Private Parking</h3>
+      <form id="bookingForm">
+        <label>Select Location:</label>
+        <select id="location">
+          <option value="Gadhinglaj ST Stand">Gadhinglaj ST Stand</option>
+          <option value="Shivaji Chowk">Shivaji Chowk</option>
+          <option value="MIDC Gadhinglaj">MIDC Gadhinglaj</option>
+        </select>
+
+        <input type="text" id="name" placeholder="Your Name" required />
+        <input type="text" id="vehicle" placeholder="Vehicle Number" required />
+        <input type="tel" id="phone" placeholder="Phone Number" required />
+
+        <button type="submit">Book Now</button>
+      </form>
+    </div>
+
+    <div class="news">
+      <h3>Parking & Traffic News</h3>
+      <p>- Parking around Shivaji Chowk will be closed on Sunday due to local event.</p>
+      <p>- Expect traffic near ST Stand from 5 PM to 7 PM daily.</p>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 Parkaro - Gadhinglaj | For College Mega Project
+  </footer>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+const locations = [
+  { name: "Gadhinglaj ST Bus Stand", lat: 16.2269, lng: 74.3493 },
+  { name: "Shivaji Chowk", lat: 16.2265, lng: 74.3481 },
+  { name: "MIDC Gadhinglaj", lat: 16.2305, lng: 74.3552 },
+  { name: "Kacheri Road", lat: 16.2287, lng: 74.3498 },
+  { name: "Sambhaji Nagar", lat: 16.2320, lng: 74.3530 },
+  { name: "Subhash Chowk", lat: 16.2258, lng: 74.3476 },
+  { name: "Market Yard Road", lat: 16.2272, lng: 74.3505 },
+  { name: "Jain Galli", lat: 16.2261, lng: 74.3489 },
+  { name: "Rajendra Nagar", lat: 16.2311, lng: 74.3512 },
+  { name: "Gandhi Chowk", lat: 16.2253, lng: 74.3483 },
+  { name: "Laxmi Mandir Road", lat: 16.2267, lng: 74.3499 },
+  { name: "Vivekanand Colony", lat: 16.2334, lng: 74.3526 },
+  { name: "Tilak Nagar", lat: 16.2298, lng: 74.3515 },
+  { name: "Datta Mandir", lat: 16.2244, lng: 74.3470 },
+  { name: "Maharana Pratap Chowk", lat: 16.2283, lng: 74.3491 },
+  { name: "Gadhinglaj Police Station Area", lat: 16.2279, lng: 74.3487 },
+  { name: "Maruti Mandir Road", lat: 16.2256, lng: 74.3463 },
+  { name: "Behind New Cinema Talkies", lat: 16.2249, lng: 74.3494 },
+  { name: "Desai Galli", lat: 16.2263, lng: 74.3482 },
+  { name: "Rani Laxmibai Chowk", lat: 16.2250, lng: 74.3475 }
+];
+
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) ** 2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) ** 2;
+      return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(2);
+    }
+
+    function displayLocations(userLat, userLng) {
+      const list = document.getElementById("locationList");
+      list.innerHTML = "";
+
+      locations.forEach(loc => {
+        const distance = getDistance(userLat, userLng, loc.lat, loc.lng);
+        const div = document.createElement("div");
+        div.className = "location";
+        div.innerHTML = `
+          <span>${loc.name}</span>
+          <div>
+            <span>${distance} km</span>
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}" target="_blank">
+              <button>Directions</button>
+            </a>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    navigator.geolocation.getCurrentPosition(pos => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      displayLocations(lat, lng);
+
+      const map = L.map('map').setView([lat, lng], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      L.marker([lat, lng]).addTo(map).bindPopup("Your Location").openPopup();
+
+      locations.forEach(loc => {
+        L.marker([loc.lat, loc.lng]).addTo(map).bindPopup(loc.name);
+      });
+    }, () => {
+      const defaultLat = 16.2270, defaultLng = 74.3490;
+      displayLocations(defaultLat, defaultLng);
+
+      const map = L.map('map').setView([defaultLat, defaultLng], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+      locations.forEach(loc => {
+        L.marker([loc.lat, loc.lng]).addTo(map).bindPopup(loc.name);
+      });
+    });
+
+    document.getElementById("bookingForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const location = document.getElementById("location").value;
+      const name = document.getElementById("name").value;
+      const vehicle = document.getElementById("vehicle").value;
+      const phone = document.getElementById("phone").value;
+
+      const content = `--- Parking Ticket ---
+Location: ${location}
+Name: ${name}
+Vehicle: ${vehicle}
+Phone: ${phone}
+Date: ${new Date().toLocaleString()}`;
+
+      const blob = new Blob([content], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `parking-ticket-${name.replace(" ", "_")}.txt`;
+      link.click();
+    });
+  </script>
+</body>
+</html>
